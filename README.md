@@ -49,7 +49,7 @@ Your Mac accumulates open apps you forgot about. App Guardian silently watches w
 ### Homebrew (easiest)
 
 ```bash
-brew tap TomGranot/tap
+brew tap TomGranot/app-guardian
 brew install app-guardian
 brew services start app-guardian
 ```
