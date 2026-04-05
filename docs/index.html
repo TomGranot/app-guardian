@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>App Guardian — Auto-close idle Mac apps with Apple Intelligence</title>
+  <meta name="description" content="A macOS menu-bar app that silently monitors your open apps and automatically closes idle ones — powered by Apple's on-device AI. Free, open source, no cloud." />
+  <meta property="og:title" content="App Guardian" />
+  <meta property="og:description" content="Auto-close idle Mac apps with Apple Intelligence. Free, open source, no cloud." />
+  <meta property="og:type" content="website" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:   #00e650;
+      --green-d: #00b840;
+      --bg:      #0a0a0a;
+      --surface: #111111;
+      --border:  #222222;
+      --text:    #f0f0f0;
+      --muted:   #888;
+      --radius:  14px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 40px;
+      background: rgba(10,10,10,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo { font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .nav-logo span { color: var(--green); }
+    nav a { color: var(--muted); text-decoration: none; font-size: 0.9rem; transition: color .2s; }
+    nav a:hover { color: var(--text); }
+    .nav-links { display: flex; gap: 28px; align-items: center; }
+    .nav-cta {
+      background: var(--green); color: #000 !important; font-weight: 600;
+      padding: 8px 18px; border-radius: 8px; font-size: 0.85rem;
+      transition: background .2s;
+    }
+    .nav-cta:hover { background: var(--green-d); }
+
+    /* ── Hero ── */
+    .hero {
+      text-align: center;
+      padding: 120px 24px 80px;
+      max-width: 780px;
+      margin: 0 auto;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(0,230,80,0.12); border: 1px solid rgba(0,230,80,0.3);
+      color: var(--green); font-size: 0.8rem; font-weight: 600;
+      padding: 5px 14px; border-radius: 100px; margin-bottom: 28px;
+      letter-spacing: 0.04em; text-transform: uppercase;
+    }
+    .hero h1 {
+      font-size: clamp(2.6rem, 6vw, 4.2rem);
+      font-weight: 800;
+      line-height: 1.12;
+      letter-spacing: -0.03em;
+      margin-bottom: 24px;
+    }
+    .hero h1 em { color: var(--green); font-style: normal; }
+    .hero p {
+      font-size: 1.2rem; color: var(--muted);
+      max-width: 560px; margin: 0 auto 40px;
+    }
+    .hero-buttons { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 13px 26px; border-radius: 10px;
+      font-size: 0.95rem; font-weight: 600; text-decoration: none;
+      transition: all .2s;
+    }
+    .btn-primary { background: var(--green); color: #000; }
+    .btn-primary:hover { background: var(--green-d); transform: translateY(-1px); }
+    .btn-secondary {
+      background: transparent; color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { border-color: var(--muted); transform: translateY(-1px); }
+
+    /* ── Menubar mockup ── */
+    .menubar-demo {
+      margin: 60px auto 0;
+      max-width: 480px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .menubar-bar {
+      background: #1c1c1e;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      gap: 10px;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+    .menubar-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .menubar-icons {
+      display: flex; align-items: center; gap: 18px;
+      justify-content: flex-end; flex: 1;
+    }
+    .menubar-ghost {
+      width: 16px; height: 16px;
+      background: var(--green);
+      border-radius: 50% 50% 0 0;
+      position: relative;
+      clip-path: polygon(0 0, 100% 0, 100% 75%, 83% 100%, 66% 75%, 50% 100%, 33% 75%, 16% 100%, 0 75%);
+    }
+    .menubar-content {
+      padding: 24px 28px;
+    }
+    .menu-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 9px 12px; border-radius: 8px;
+      font-size: 0.88rem; cursor: default;
+    }
+    .menu-item:hover, .menu-item.active { background: rgba(0,230,80,0.1); }
+    .menu-item.active { color: var(--green); }
+    .menu-sep { height: 1px; background: var(--border); margin: 6px 12px; }
+    .menu-icon { width: 18px; text-align: center; }
+    .badge {
+      margin-left: auto; font-size: 0.75rem;
+      background: rgba(0,230,80,0.15); color: var(--green);
+      padding: 2px 8px; border-radius: 100px;
+    }
+
+    /* ── Features ── */
+    .section { padding: 100px 24px; max-width: 1100px; margin: 0 auto; }
+    .section-label {
+      text-transform: uppercase; letter-spacing: 0.1em;
+      font-size: 0.75rem; color: var(--green); font-weight: 600;
+      margin-bottom: 14px;
+    }
+    .section-title {
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      font-weight: 800; letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+    .section-sub { color: var(--muted); font-size: 1.05rem; max-width: 520px; }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-top: 56px;
+    }
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      transition: border-color .2s;
+    }
+    .feature-card:hover { border-color: rgba(0,230,80,0.4); }
+    .feature-icon { font-size: 1.8rem; margin-bottom: 16px; }
+    .feature-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+    .feature-card p { font-size: 0.9rem; color: var(--muted); line-height: 1.6; }
+
+    /* ── How it works ── */
+    .steps { display: flex; flex-direction: column; gap: 0; margin-top: 56px; }
+    .step {
+      display: flex; gap: 24px;
+      padding: 32px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .step:last-child { border-bottom: none; }
+    .step-num {
+      flex-shrink: 0;
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: rgba(0,230,80,0.1);
+      border: 1px solid rgba(0,230,80,0.3);
+      color: var(--green);
+      font-weight: 700; font-size: 0.85rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .step-body h3 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+    .step-body p { font-size: 0.9rem; color: var(--muted); }
+
+    /* ── Code block ── */
+    .code-block {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      margin-top: 40px;
+      overflow-x: auto;
+    }
+    .code-block pre {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      line-height: 1.8;
+      color: #cdd9e5;
+    }
+    .code-block .comment { color: #6e7681; }
+    .code-block .cmd { color: var(--green); }
+    .code-block .str { color: #a5d6ff; }
+
+    /* ── Stats strip ── */
+    .stats-strip {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 56px 24px;
+    }
+    .stats-inner {
+      max-width: 900px; margin: 0 auto;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 32px; text-align: center;
+    }
+    .stat-num {
+      font-size: 2.6rem; font-weight: 800;
+      color: var(--green); letter-spacing: -0.04em;
+    }
+    .stat-label { font-size: 0.88rem; color: var(--muted); margin-top: 4px; }
+
+    /* ── CTA ── */
+    .cta-section {
+      text-align: center;
+      padding: 100px 24px;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    .cta-section h2 {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 800; letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+    .cta-section p { color: var(--muted); margin-bottom: 36px; font-size: 1.05rem; }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 40px;
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.85rem; color: var(--muted);
+      flex-wrap: wrap; gap: 12px;
+    }
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--text); }
+    .footer-links { display: flex; gap: 24px; }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="nav-logo">👻 <span>App Guardian</span></div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#how-it-works">How it works</a>
+    <a href="#install">Install</a>
+    <a href="https://github.com/TomGranot/app-guardian" class="nav-cta">View on GitHub →</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-badge">✦ Open Source · macOS only · No cloud</div>
+  <h1>Your Mac, <em>without the clutter</em></h1>
+  <p>App Guardian lives in your menu bar and quietly closes apps you forgot about — using Apple's on-device AI to make smart decisions.</p>
+  <div class="hero-buttons">
+    <a href="#install" class="btn btn-primary">↓ Get started</a>
+    <a href="https://github.com/TomGranot/app-guardian" class="btn btn-secondary">★ Star on GitHub</a>
+  </div>
+
+  <!-- Menubar demo -->
+  <div class="menubar-demo">
+    <div class="menubar-bar">
+      <div class="menubar-dot" style="background:#ff5f57"></div>
+      <div class="menubar-dot" style="background:#febc2e"></div>
+      <div class="menubar-dot" style="background:#28c840"></div>
+      <div style="flex:1"></div>
+      <div class="menubar-icons">
+        <div class="menubar-ghost"></div>
+        <span style="font-size:11px">9:41 AM</span>
+      </div>
+    </div>
+    <div class="menubar-content">
+      <div class="menu-item active">
+        <span class="menu-icon">●</span> Monitoring ON
+      </div>
+      <div class="menu-item">
+        <span class="menu-icon">📊</span> 8 apps tracked — view status…
+      </div>
+      <div class="menu-sep"></div>
+      <div class="menu-item">
+        <span class="menu-icon">⏱</span> Timeout: 30 min
+      </div>
+      <div class="menu-item">
+        <span class="menu-icon">✅</span> Use Apple Intelligence
+      </div>
+      <div class="menu-item">
+        <span class="menu-icon">✅</span> Clean cache on close
+      </div>
+      <div class="menu-sep"></div>
+      <div class="menu-item">
+        <span class="menu-icon">📈</span> Statistics…
+        <span class="badge">3 today</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Stats -->
+<div class="stats-strip">
+  <div class="stats-inner">
+    <div>
+      <div class="stat-num">0 cloud</div>
+      <div class="stat-label">Runs entirely on-device</div>
+    </div>
+    <div>
+      <div class="stat-num">&lt;1%</div>
+      <div class="stat-label">CPU overhead</div>
+    </div>
+    <div>
+      <div class="stat-num">10 s</div>
+      <div class="stat-label">Poll interval</div>
+    </div>
+    <div>
+      <div class="stat-num">Free</div>
+      <div class="stat-label">MIT licensed, forever</div>
+    </div>
+  </div>
+</div>
+
+<!-- Features -->
+<section class="section" id="features">
+  <div class="section-label">Features</div>
+  <h2 class="section-title">Everything your Mac's memory needs</h2>
+  <p class="section-sub">A tight, focused tool. No bloat, no accounts, no subscriptions.</p>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">🤖</div>
+      <h3>Apple Intelligence decisions</h3>
+      <p>Uses <a href="https://github.com/Arthur-Ficial/apfel" style="color:var(--green)">apfel</a> to ask Apple's on-device Foundation Model: "Should I close this?" Answers are cached per session so it only calls once per app.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🧹</div>
+      <h3>Automatic cache cleanup</h3>
+      <p>After quitting, deletes <code style="color:var(--green);font-family:monospace">~/Library/Caches/&lt;bundle&gt;</code> and any fuzzy-matched folders. Frees space you'd never find manually.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">💀</div>
+      <h3>Force-quit fallback</h3>
+      <p>Tries a graceful quit first. If the app doesn't respond within 10 seconds, it force-kills it. Nothing gets left hanging.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🚫</div>
+      <h3>Smart exclusions</h3>
+      <p>System apps (Finder, Dock, Spotlight…) are excluded by default. Add any app to the list directly from the menu.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📈</div>
+      <h3>Usage statistics</h3>
+      <p>Every close event is logged to a local JSON file. The built-in stats screen shows closes today, this week, all time, and top offending apps.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔒</div>
+      <h3>Fully private</h3>
+      <p>All data stays on your machine. The only network call is to <code style="color:var(--green);font-family:monospace">localhost:11434</code> (apfel). Zero telemetry.</p>
+    </div>
+  </div>
+</section>
+
+<!-- How it works -->
+<section class="section" id="how-it-works" style="padding-top:0">
+  <div class="section-label">How it works</div>
+  <h2 class="section-title">Simple by design</h2>
+  <p class="section-sub">Three loops running quietly in the background.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Poll (every 10 s)</h3>
+        <p>Records which app is in the foreground and timestamps it. Uses macOS's <code style="color:var(--green)">NSWorkspace</code> API — no Accessibility permissions required.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Check (every 60 s)</h3>
+        <p>Scans all running apps. Any app idle past your threshold gets flagged. Apple Intelligence (via apfel) makes the final YES/NO call — or you can skip it and use pure timer logic.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>Close + clean</h3>
+        <p>Sends a terminate signal and waits. Force-kills if needed. Then wipes the app's cache directory and logs the freed space to history.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Install -->
+<section class="section" id="install" style="padding-top:0">
+  <div class="section-label">Installation</div>
+  <h2 class="section-title">Up and running in 60 seconds</h2>
+
+  <div class="code-block">
+    <pre><span class="comment"># Clone the repo</span>
+<span class="cmd">git clone</span> https://github.com/TomGranot/app-guardian.git
+<span class="cmd">cd</span> app-guardian
+
+<span class="comment"># (Optional) Install Apple Intelligence backend</span>
+<span class="cmd">brew tap</span> Arthur-Ficial/tap <span class="cmd">&amp;&amp; brew install</span> apfel
+<span class="cmd">apfel --serve</span>   <span class="comment"># keep running in a Terminal tab</span>
+
+<span class="comment"># Install Python deps and launch</span>
+<span class="cmd">./setup.sh</span>
+<span class="cmd">./run.sh</span>
+
+<span class="comment"># Auto-start on login (optional)</span>
+<span class="cmd">./install-agent.sh</span></pre>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <h2>Give your Mac a break</h2>
+  <p>Free, open source, and runs entirely on your machine. No account needed.</p>
+  <div class="hero-buttons">
+    <a href="https://github.com/TomGranot/app-guardian" class="btn btn-primary">View on GitHub →</a>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <span>👻 App Guardian — MIT License</span>
+  <div class="footer-links">
+    <a href="https://github.com/TomGranot/app-guardian">GitHub</a>
+    <a href="https://github.com/TomGranot/app-guardian/issues">Issues</a>
+    <a href="https://github.com/TomGranot/app-guardian/releases">Releases</a>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,10 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+
+# Personal runtime data — not for sharing
+~/.config/app-guardian/config.json
+~/.config/app-guardian/history.json
+~/.config/app-guardian/*.log
