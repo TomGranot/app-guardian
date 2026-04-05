@@ -7,455 +7,766 @@
   <meta name="description" content="A macOS menu-bar app that silently monitors your open apps and automatically closes idle ones — powered by Apple's on-device AI. Free, open source, no cloud." />
   <meta property="og:title" content="App Guardian" />
   <meta property="og:description" content="Auto-close idle Mac apps with Apple Intelligence. Free, open source, no cloud." />
-  <meta property="og:type" content="website" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --green:   #00e650;
-      --green-d: #00b840;
-      --bg:      #0a0a0a;
-      --surface: #111111;
-      --border:  #222222;
-      --text:    #f0f0f0;
-      --muted:   #888;
-      --radius:  14px;
+      --black:  #0a0a0a;
+      --white:  #FFFDF5;
+      --green:  #00E650;
+      --yellow: #FFE000;
+      --border: 2.5px solid #0a0a0a;
+      --shadow: 5px 5px 0px #0a0a0a;
+      --shadow-sm: 3px 3px 0px #0a0a0a;
+      --shadow-lg: 8px 8px 0px #0a0a0a;
+      --r: 0px;
     }
 
     html { scroll-behavior: smooth; }
 
     body {
-      font-family: 'Inter', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.65;
+      font-family: 'Space Grotesk', sans-serif;
+      background: var(--white);
+      color: var(--black);
+      line-height: 1.6;
       -webkit-font-smoothing: antialiased;
     }
 
-    /* ── Nav ── */
+    /* ─── NAV ──────────────────────────────────────────── */
     nav {
+      border-bottom: var(--border);
+      padding: 0 40px;
+      display: flex;
+      align-items: stretch;
+      background: var(--white);
       position: sticky; top: 0; z-index: 100;
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 18px 40px;
-      background: rgba(10,10,10,0.85);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
     }
-    .nav-logo { font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-    .nav-logo span { color: var(--green); }
-    nav a { color: var(--muted); text-decoration: none; font-size: 0.9rem; transition: color .2s; }
-    nav a:hover { color: var(--text); }
-    .nav-links { display: flex; gap: 28px; align-items: center; }
-    .nav-cta {
-      background: var(--green); color: #000 !important; font-weight: 600;
-      padding: 8px 18px; border-radius: 8px; font-size: 0.85rem;
-      transition: background .2s;
-    }
-    .nav-cta:hover { background: var(--green-d); }
-
-    /* ── Hero ── */
-    .hero {
-      text-align: center;
-      padding: 120px 24px 80px;
-      max-width: 780px;
-      margin: 0 auto;
-    }
-    .hero-badge {
-      display: inline-flex; align-items: center; gap: 8px;
-      background: rgba(0,230,80,0.12); border: 1px solid rgba(0,230,80,0.3);
-      color: var(--green); font-size: 0.8rem; font-weight: 600;
-      padding: 5px 14px; border-radius: 100px; margin-bottom: 28px;
-      letter-spacing: 0.04em; text-transform: uppercase;
-    }
-    .hero h1 {
-      font-size: clamp(2.6rem, 6vw, 4.2rem);
-      font-weight: 800;
-      line-height: 1.12;
-      letter-spacing: -0.03em;
-      margin-bottom: 24px;
-    }
-    .hero h1 em { color: var(--green); font-style: normal; }
-    .hero p {
-      font-size: 1.2rem; color: var(--muted);
-      max-width: 560px; margin: 0 auto 40px;
-    }
-    .hero-buttons { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
-    .btn {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 13px 26px; border-radius: 10px;
-      font-size: 0.95rem; font-weight: 600; text-decoration: none;
-      transition: all .2s;
-    }
-    .btn-primary { background: var(--green); color: #000; }
-    .btn-primary:hover { background: var(--green-d); transform: translateY(-1px); }
-    .btn-secondary {
-      background: transparent; color: var(--text);
-      border: 1px solid var(--border);
-    }
-    .btn-secondary:hover { border-color: var(--muted); transform: translateY(-1px); }
-
-    /* ── Menubar mockup ── */
-    .menubar-demo {
-      margin: 60px auto 0;
-      max-width: 480px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-    }
-    .menubar-bar {
-      background: #1c1c1e;
-      height: 28px;
+    .nav-logo {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
       display: flex;
       align-items: center;
-      padding: 0 12px;
       gap: 10px;
-      font-size: 0.72rem;
-      color: var(--muted);
+      padding: 18px 0;
+      border-right: var(--border);
+      padding-right: 28px;
+      margin-right: 28px;
     }
-    .menubar-dot { width: 10px; height: 10px; border-radius: 50%; }
-    .menubar-icons {
-      display: flex; align-items: center; gap: 18px;
-      justify-content: flex-end; flex: 1;
-    }
-    .menubar-ghost {
-      width: 16px; height: 16px;
+    .nav-logo .dot {
+      width: 14px; height: 14px;
       background: var(--green);
-      border-radius: 50% 50% 0 0;
-      position: relative;
-      clip-path: polygon(0 0, 100% 0, 100% 75%, 83% 100%, 66% 75%, 50% 100%, 33% 75%, 16% 100%, 0 75%);
+      border: var(--border);
+      display: inline-block;
     }
-    .menubar-content {
-      padding: 24px 28px;
+    .nav-links {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      flex: 1;
     }
-    .menu-item {
-      display: flex; align-items: center; gap: 12px;
-      padding: 9px 12px; border-radius: 8px;
-      font-size: 0.88rem; cursor: default;
+    .nav-links a {
+      display: flex; align-items: center;
+      padding: 0 22px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--black);
+      text-decoration: none;
+      border-right: var(--border);
+      transition: background 0.15s;
     }
-    .menu-item:hover, .menu-item.active { background: rgba(0,230,80,0.1); }
-    .menu-item.active { color: var(--green); }
-    .menu-sep { height: 1px; background: var(--border); margin: 6px 12px; }
-    .menu-icon { width: 18px; text-align: center; }
-    .badge {
-      margin-left: auto; font-size: 0.75rem;
-      background: rgba(0,230,80,0.15); color: var(--green);
-      padding: 2px 8px; border-radius: 100px;
+    .nav-links a:hover { background: var(--yellow); }
+    .nav-cta {
+      margin-left: auto;
+      display: flex; align-items: center;
+      padding: 0 24px;
+      font-weight: 700;
+      font-size: 0.875rem;
+      background: var(--green);
+      border-left: var(--border);
+      color: var(--black) !important;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .nav-cta:hover { background: var(--yellow); }
+
+    /* ─── HERO ─────────────────────────────────────────── */
+    .hero {
+      padding: 80px 40px 0;
+      border-bottom: var(--border);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      min-height: 520px;
+    }
+    .hero-left {
+      padding: 20px 60px 60px 0;
+      border-right: var(--border);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      border: var(--border);
+      padding: 6px 14px;
+      margin-bottom: 28px;
+      width: fit-content;
+      box-shadow: var(--shadow-sm);
+    }
+    .hero-tag .pulse {
+      width: 8px; height: 8px;
+      background: var(--green);
+      border-radius: 50%;
+      border: var(--border);
+    }
+    .hero h1 {
+      font-size: clamp(2.8rem, 5vw, 4.8rem);
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 1.05;
+      margin-bottom: 24px;
+    }
+    .hero h1 .ghost-word {
+      background: var(--green);
+      padding: 0 8px;
+      display: inline-block;
+    }
+    .hero p {
+      font-size: 1.1rem;
+      color: #444;
+      max-width: 440px;
+      margin-bottom: 40px;
+      line-height: 1.7;
+    }
+    .hero-buttons {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
     }
 
-    /* ── Features ── */
-    .section { padding: 100px 24px; max-width: 1100px; margin: 0 auto; }
-    .section-label {
-      text-transform: uppercase; letter-spacing: 0.1em;
-      font-size: 0.75rem; color: var(--green); font-weight: 600;
-      margin-bottom: 14px;
+    .hero-right {
+      padding: 40px 0 40px 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Menubar mockup */
+    .mockup {
+      width: 100%;
+      max-width: 420px;
+      border: var(--border);
+      box-shadow: var(--shadow-lg);
+    }
+    .mockup-bar {
+      background: var(--black);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: var(--border);
+    }
+    .mock-dots { display: flex; gap: 6px; }
+    .mock-dot {
+      width: 11px; height: 11px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,0.3);
+    }
+    .mock-time {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .mock-ghost {
+      font-size: 0.95rem;
+      filter: drop-shadow(0 0 6px var(--green));
+    }
+    .mockup-menu {
+      background: var(--white);
+      padding: 8px 0;
+    }
+    .mock-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 9px 18px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: default;
+      transition: background 0.1s;
+    }
+    .mock-item:hover { background: #f0f0e8; }
+    .mock-item.green { color: #009940; font-weight: 700; }
+    .mock-sep {
+      height: 1px;
+      background: var(--black);
+      margin: 6px 0;
+      opacity: 0.15;
+    }
+    .mock-badge {
+      margin-left: auto;
+      font-size: 0.7rem;
+      font-weight: 700;
+      background: var(--green);
+      border: 1.5px solid var(--black);
+      padding: 1px 7px;
+      font-family: 'Space Mono', monospace;
+    }
+
+    /* ─── BUTTONS ──────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 13px 24px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      font-family: 'Space Grotesk', sans-serif;
+      text-decoration: none;
+      border: var(--border);
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.1s;
+      box-shadow: var(--shadow);
+    }
+    .btn:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0 var(--black); }
+    .btn-primary { background: var(--green); color: var(--black); }
+    .btn-primary:hover { background: #00ff60; }
+    .btn-secondary { background: var(--white); color: var(--black); }
+    .btn-secondary:hover { background: var(--yellow); }
+    .btn-dark { background: var(--black); color: var(--white); }
+    .btn-dark:hover { background: #222; }
+
+    /* ─── STATS STRIP ──────────────────────────────────── */
+    .stats-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-bottom: var(--border);
+    }
+    .stat-cell {
+      padding: 32px 28px;
+      border-right: var(--border);
+    }
+    .stat-cell:last-child { border-right: none; }
+    .stat-num {
+      font-size: 2.4rem;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .stat-num.green { color: var(--green); -webkit-text-stroke: 1px var(--black); }
+    .stat-label { font-size: 0.82rem; font-weight: 500; color: #555; }
+
+    /* ─── SECTIONS ─────────────────────────────────────── */
+    .section { padding: 80px 40px; }
+    .section-header { margin-bottom: 56px; }
+    .section-tag {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      background: var(--yellow);
+      border: var(--border);
+      padding: 4px 12px;
+      margin-bottom: 18px;
+      box-shadow: var(--shadow-sm);
     }
     .section-title {
-      font-size: clamp(1.8rem, 4vw, 2.6rem);
-      font-weight: 800; letter-spacing: -0.02em;
-      margin-bottom: 16px;
+      font-size: clamp(1.9rem, 3.5vw, 2.8rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      max-width: 600px;
     }
-    .section-sub { color: var(--muted); font-size: 1.05rem; max-width: 520px; }
+    .section-sub {
+      font-size: 1rem;
+      color: #555;
+      margin-top: 12px;
+      max-width: 480px;
+    }
 
+    /* ─── FEATURES ─────────────────────────────────────── */
+    .features-section { border-top: var(--border); }
     .features-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 20px;
-      margin-top: 56px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
     }
     .feature-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 28px;
-      transition: border-color .2s;
+      border: var(--border);
+      border-top: none;
+      border-left: none;
+      padding: 36px 32px;
+      transition: background 0.15s;
+      position: relative;
     }
-    .feature-card:hover { border-color: rgba(0,230,80,0.4); }
-    .feature-icon { font-size: 1.8rem; margin-bottom: 16px; }
-    .feature-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
-    .feature-card p { font-size: 0.9rem; color: var(--muted); line-height: 1.6; }
+    .feature-card:nth-child(3n+1) { border-left: var(--border); }
+    .feature-card:hover { background: #f7f4ec; }
+    .feature-card:hover .fc-icon { transform: rotate(-5deg); }
+    .fc-icon {
+      font-size: 2rem;
+      margin-bottom: 18px;
+      display: inline-block;
+      transition: transform 0.2s;
+      border: var(--border);
+      padding: 10px 14px;
+      background: var(--white);
+      box-shadow: var(--shadow-sm);
+    }
+    .feature-card h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      letter-spacing: -0.01em;
+    }
+    .feature-card p { font-size: 0.875rem; color: #555; line-height: 1.65; }
+    .fc-new {
+      position: absolute;
+      top: 20px; right: 20px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: var(--green);
+      border: var(--border);
+      padding: 2px 8px;
+    }
 
-    /* ── How it works ── */
-    .steps { display: flex; flex-direction: column; gap: 0; margin-top: 56px; }
+    /* ─── HOW IT WORKS ─────────────────────────────────── */
+    .how-section {
+      border-top: var(--border);
+      background: var(--black);
+      color: var(--white);
+    }
+    .how-section .section-tag { background: var(--green); }
+    .how-section .section-title { color: var(--white); }
+    .how-section .section-sub { color: #888; }
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+      margin-top: 56px;
+      border: 2.5px solid #333;
+    }
     .step {
-      display: flex; gap: 24px;
-      padding: 32px 0;
-      border-bottom: 1px solid var(--border);
+      padding: 40px 32px;
+      border-right: 2.5px solid #333;
     }
-    .step:last-child { border-bottom: none; }
+    .step:last-child { border-right: none; }
     .step-num {
-      flex-shrink: 0;
-      width: 36px; height: 36px;
-      border-radius: 50%;
-      background: rgba(0,230,80,0.1);
-      border: 1px solid rgba(0,230,80,0.3);
+      font-size: 4rem;
+      font-weight: 700;
+      letter-spacing: -0.04em;
       color: var(--green);
-      font-weight: 700; font-size: 0.85rem;
-      display: flex; align-items: center; justify-content: center;
+      line-height: 1;
+      margin-bottom: 20px;
+      font-family: 'Space Mono', monospace;
     }
-    .step-body h3 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
-    .step-body p { font-size: 0.9rem; color: var(--muted); }
+    .step h3 { font-size: 1rem; font-weight: 700; margin-bottom: 10px; color: var(--white); }
+    .step p { font-size: 0.875rem; color: #888; line-height: 1.65; }
+    .step code {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--green);
+      background: rgba(0,230,80,0.1);
+      padding: 1px 5px;
+    }
 
-    /* ── Code block ── */
-    .code-block {
-      background: #0d1117;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 28px 32px;
-      margin-top: 40px;
-      overflow-x: auto;
+    /* ─── INSTALL ──────────────────────────────────────── */
+    .install-section { border-top: var(--border); }
+    .install-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      align-items: start;
     }
-    .code-block pre {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.85rem;
-      line-height: 1.8;
+    .install-box {
+      border: var(--border);
+      box-shadow: var(--shadow);
+    }
+    .install-box-header {
+      border-bottom: var(--border);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--black);
+      color: var(--white);
+    }
+    .install-box-header span {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.8rem;
+    }
+    .install-box-header .lang-badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: var(--green);
+      color: var(--black);
+      padding: 2px 8px;
+    }
+    .install-box pre {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.8rem;
+      line-height: 1.9;
+      padding: 24px;
+      overflow-x: auto;
+      background: #0d1117;
       color: #cdd9e5;
     }
-    .code-block .comment { color: #6e7681; }
-    .code-block .cmd { color: var(--green); }
-    .code-block .str { color: #a5d6ff; }
+    .c { color: #6e7681; }
+    .g { color: var(--green); }
+    .w { color: #fff; }
 
-    /* ── Stats strip ── */
-    .stats-strip {
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-      padding: 56px 24px;
+    .install-right {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
     }
-    .stats-inner {
-      max-width: 900px; margin: 0 auto;
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 32px; text-align: center;
+    .install-note {
+      border: var(--border);
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
     }
-    .stat-num {
-      font-size: 2.6rem; font-weight: 800;
-      color: var(--green); letter-spacing: -0.04em;
+    .install-note h4 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
     }
-    .stat-label { font-size: 0.88rem; color: var(--muted); margin-top: 4px; }
+    .install-note p { font-size: 0.875rem; color: #555; line-height: 1.65; }
+    .install-note.yellow { background: var(--yellow); }
+    .install-note.green { background: var(--green); }
 
-    /* ── CTA ── */
+    /* ─── CTA ──────────────────────────────────────────── */
     .cta-section {
-      text-align: center;
-      padding: 100px 24px;
-      max-width: 640px;
-      margin: 0 auto;
+      border-top: var(--border);
+      padding: 80px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 32px;
+      flex-wrap: wrap;
     }
-    .cta-section h2 {
-      font-size: clamp(1.8rem, 4vw, 2.8rem);
-      font-weight: 800; letter-spacing: -0.02em;
-      margin-bottom: 16px;
+    .cta-left h2 {
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      max-width: 560px;
     }
-    .cta-section p { color: var(--muted); margin-bottom: 36px; font-size: 1.05rem; }
+    .cta-left h2 span {
+      background: var(--green);
+      padding: 0 6px;
+    }
+    .cta-right {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: flex-start;
+    }
 
-    /* ── Footer ── */
+    /* ─── FOOTER ───────────────────────────────────────── */
     footer {
-      border-top: 1px solid var(--border);
-      padding: 32px 40px;
-      display: flex; align-items: center; justify-content: space-between;
-      font-size: 0.85rem; color: var(--muted);
-      flex-wrap: wrap; gap: 12px;
+      border-top: var(--border);
+      background: var(--black);
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px 40px;
+      flex-wrap: wrap;
+      gap: 12px;
     }
-    footer a { color: var(--muted); text-decoration: none; }
-    footer a:hover { color: var(--text); }
+    footer .footer-logo {
+      font-weight: 700;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    footer .footer-logo .dot {
+      width: 10px; height: 10px;
+      background: var(--green);
+      border-radius: 50%;
+    }
+    footer a { color: #888; text-decoration: none; font-size: 0.85rem; }
+    footer a:hover { color: var(--white); }
     .footer-links { display: flex; gap: 24px; }
+    .footer-right { color: #555; font-size: 0.8rem; }
+
+    /* ─── RESPONSIVE ───────────────────────────────────── */
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; }
+      .hero-right { border-top: var(--border); padding: 40px 0; }
+      .hero-left { border-right: none; padding-right: 0; }
+      .stats-strip { grid-template-columns: repeat(2, 1fr); }
+      .stat-cell:nth-child(2) { border-right: none; }
+      .features-grid { grid-template-columns: 1fr; }
+      .feature-card:nth-child(3n+1) { border-left: none; }
+      .feature-card { border-left: none; }
+      .steps-grid { grid-template-columns: 1fr; }
+      .step { border-right: none; border-bottom: 2.5px solid #333; }
+      .step:last-child { border-bottom: none; }
+      .install-grid { grid-template-columns: 1fr; }
+      .cta-section { flex-direction: column; }
+      nav { padding: 0 20px; }
+      .section { padding: 60px 20px; }
+      .hero { padding: 60px 20px 0; }
+      .cta-section { padding: 60px 20px; }
+    }
   </style>
 </head>
 <body>
 
-<!-- Nav -->
+<!-- ── NAV ─────────────────────────────────────────────── -->
 <nav>
-  <div class="nav-logo">👻 <span>App Guardian</span></div>
+  <div class="nav-logo">
+    <span class="dot"></span>
+    APP GUARDIAN
+  </div>
   <div class="nav-links">
     <a href="#features">Features</a>
     <a href="#how-it-works">How it works</a>
     <a href="#install">Install</a>
-    <a href="https://github.com/TomGranot/app-guardian" class="nav-cta">View on GitHub →</a>
   </div>
+  <a href="https://github.com/TomGranot/app-guardian" class="nav-cta">
+    ★ Star on GitHub
+  </a>
 </nav>
 
-<!-- Hero -->
+<!-- ── HERO ────────────────────────────────────────────── -->
 <section class="hero">
-  <div class="hero-badge">✦ Open Source · macOS only · No cloud</div>
-  <h1>Your Mac, <em>without the clutter</em></h1>
-  <p>App Guardian lives in your menu bar and quietly closes apps you forgot about — using Apple's on-device AI to make smart decisions.</p>
-  <div class="hero-buttons">
-    <a href="#install" class="btn btn-primary">↓ Get started</a>
-    <a href="https://github.com/TomGranot/app-guardian" class="btn btn-secondary">★ Star on GitHub</a>
+  <div class="hero-left">
+    <div class="hero-tag">
+      <span class="pulse"></span>
+      macOS · Open Source · No cloud
+    </div>
+    <h1>
+      Your Mac.<br>
+      <span class="ghost-word">👻 Without</span><br>
+      the clutter.
+    </h1>
+    <p>
+      App Guardian lives in your menu bar and quietly closes apps you forgot about — using Apple's on-device AI to make smart decisions. Zero config, zero cloud.
+    </p>
+    <div class="hero-buttons">
+      <a href="#install" class="btn btn-primary">↓ Get started free</a>
+      <a href="https://github.com/TomGranot/app-guardian" class="btn btn-secondary">View source →</a>
+    </div>
   </div>
 
-  <!-- Menubar demo -->
-  <div class="menubar-demo">
-    <div class="menubar-bar">
-      <div class="menubar-dot" style="background:#ff5f57"></div>
-      <div class="menubar-dot" style="background:#febc2e"></div>
-      <div class="menubar-dot" style="background:#28c840"></div>
-      <div style="flex:1"></div>
-      <div class="menubar-icons">
-        <div class="menubar-ghost"></div>
-        <span style="font-size:11px">9:41 AM</span>
+  <div class="hero-right">
+    <div class="mockup">
+      <div class="mockup-bar">
+        <div class="mock-dots">
+          <div class="mock-dot" style="background:#ff5f57"></div>
+          <div class="mock-dot" style="background:#febc2e"></div>
+          <div class="mock-dot" style="background:#28c840"></div>
+        </div>
+        <div class="mock-time">
+          <span class="mock-ghost">👻</span>
+          9:41 AM
+        </div>
       </div>
-    </div>
-    <div class="menubar-content">
-      <div class="menu-item active">
-        <span class="menu-icon">●</span> Monitoring ON
-      </div>
-      <div class="menu-item">
-        <span class="menu-icon">📊</span> 8 apps tracked — view status…
-      </div>
-      <div class="menu-sep"></div>
-      <div class="menu-item">
-        <span class="menu-icon">⏱</span> Timeout: 30 min
-      </div>
-      <div class="menu-item">
-        <span class="menu-icon">✅</span> Use Apple Intelligence
-      </div>
-      <div class="menu-item">
-        <span class="menu-icon">✅</span> Clean cache on close
-      </div>
-      <div class="menu-sep"></div>
-      <div class="menu-item">
-        <span class="menu-icon">📈</span> Statistics…
-        <span class="badge">3 today</span>
+      <div class="mockup-menu">
+        <div class="mock-item green">● &nbsp;Monitoring ON</div>
+        <div class="mock-item">📊 &nbsp;8 apps tracked — view status…</div>
+        <div class="mock-sep"></div>
+        <div class="mock-item">⏱ &nbsp;Timeout: 30 min</div>
+        <div class="mock-item">🚫 &nbsp;Excluded Apps…</div>
+        <div class="mock-item">✅ &nbsp;Use Apple Intelligence</div>
+        <div class="mock-item">✅ &nbsp;Clean cache on close</div>
+        <div class="mock-sep"></div>
+        <div class="mock-item">
+          🧹 &nbsp;Clean All Caches Now
+        </div>
+        <div class="mock-item">
+          📈 &nbsp;Statistics…
+          <span class="mock-badge">3 today</span>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Stats -->
+<!-- ── STATS STRIP ──────────────────────────────────────── -->
 <div class="stats-strip">
-  <div class="stats-inner">
-    <div>
-      <div class="stat-num">0 cloud</div>
-      <div class="stat-label">Runs entirely on-device</div>
-    </div>
-    <div>
-      <div class="stat-num">&lt;1%</div>
-      <div class="stat-label">CPU overhead</div>
-    </div>
-    <div>
-      <div class="stat-num">10 s</div>
-      <div class="stat-label">Poll interval</div>
-    </div>
-    <div>
-      <div class="stat-num">Free</div>
-      <div class="stat-label">MIT licensed, forever</div>
-    </div>
+  <div class="stat-cell">
+    <div class="stat-num green">0</div>
+    <div class="stat-label">Cloud calls — runs entirely on-device</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-num">&lt;1%</div>
+    <div class="stat-label">CPU overhead from background polling</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-num">10s</div>
+    <div class="stat-label">Poll interval — barely notices it's there</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-num">MIT</div>
+    <div class="stat-label">Free forever, open source, no strings</div>
   </div>
 </div>
 
-<!-- Features -->
-<section class="section" id="features">
-  <div class="section-label">Features</div>
-  <h2 class="section-title">Everything your Mac's memory needs</h2>
-  <p class="section-sub">A tight, focused tool. No bloat, no accounts, no subscriptions.</p>
-
+<!-- ── FEATURES ────────────────────────────────────────── -->
+<section class="section features-section" id="features">
+  <div class="section-header">
+    <div class="section-tag">Features</div>
+    <h2 class="section-title">Small app. Big impact on your RAM.</h2>
+    <p class="section-sub">Every feature does exactly one thing, and does it well.</p>
+  </div>
   <div class="features-grid">
     <div class="feature-card">
-      <div class="feature-icon">🤖</div>
+      <div class="fc-new">AI</div>
+      <div class="fc-icon">🤖</div>
       <h3>Apple Intelligence decisions</h3>
-      <p>Uses <a href="https://github.com/Arthur-Ficial/apfel" style="color:var(--green)">apfel</a> to ask Apple's on-device Foundation Model: "Should I close this?" Answers are cached per session so it only calls once per app.</p>
+      <p>Asks Apple's on-device model: "Is it safe to quit this app?" Knows not to touch your music player, VPN, or background sync tools. Results cached per session.</p>
     </div>
     <div class="feature-card">
-      <div class="feature-icon">🧹</div>
+      <div class="fc-icon">🧹</div>
       <h3>Automatic cache cleanup</h3>
-      <p>After quitting, deletes <code style="color:var(--green);font-family:monospace">~/Library/Caches/&lt;bundle&gt;</code> and any fuzzy-matched folders. Frees space you'd never find manually.</p>
+      <p>After quitting, wipes <code style="font-family:monospace;font-size:0.8em;background:#f0f0e8;padding:1px 4px">~/Library/Caches/&lt;bundle&gt;</code> and any fuzzy-matched directories. Frees space you'd never find manually.</p>
     </div>
     <div class="feature-card">
-      <div class="feature-icon">💀</div>
+      <div class="fc-icon">💀</div>
       <h3>Force-quit fallback</h3>
-      <p>Tries a graceful quit first. If the app doesn't respond within 10 seconds, it force-kills it. Nothing gets left hanging.</p>
+      <p>Tries a graceful quit first. Waits 10 seconds. If the app doesn't respond, it force-kills it. Nothing gets left hanging.</p>
     </div>
     <div class="feature-card">
-      <div class="feature-icon">🚫</div>
+      <div class="fc-icon">🚫</div>
       <h3>Smart exclusions</h3>
-      <p>System apps (Finder, Dock, Spotlight…) are excluded by default. Add any app to the list directly from the menu.</p>
+      <p>Finder, Dock, Spotlight, and other system apps are excluded by default. Add any app to the exclusion list straight from the menu bar — no config file needed.</p>
     </div>
     <div class="feature-card">
-      <div class="feature-icon">📈</div>
+      <div class="fc-icon">📈</div>
       <h3>Usage statistics</h3>
-      <p>Every close event is logged to a local JSON file. The built-in stats screen shows closes today, this week, all time, and top offending apps.</p>
+      <p>Every close event persisted to a local JSON file. The built-in stats screen shows closes today, 7-day, all-time, cache freed, and your top offending apps.</p>
     </div>
     <div class="feature-card">
-      <div class="feature-icon">🔒</div>
+      <div class="fc-icon">🔒</div>
       <h3>Fully private</h3>
-      <p>All data stays on your machine. The only network call is to <code style="color:var(--green);font-family:monospace">localhost:11434</code> (apfel). Zero telemetry.</p>
+      <p>Zero telemetry. The only network call is to <code style="font-family:monospace;font-size:0.8em;background:#f0f0e8;padding:1px 4px">localhost:11434</code> (apfel, running on your machine). Nothing leaves your computer.</p>
     </div>
   </div>
 </section>
 
-<!-- How it works -->
-<section class="section" id="how-it-works" style="padding-top:0">
-  <div class="section-label">How it works</div>
-  <h2 class="section-title">Simple by design</h2>
-  <p class="section-sub">Three loops running quietly in the background.</p>
+<!-- ── HOW IT WORKS ─────────────────────────────────────── -->
+<section class="section how-section" id="how-it-works">
+  <div class="section-header">
+    <div class="section-tag">How it works</div>
+    <h2 class="section-title">Three loops. Zero drama.</h2>
+    <p class="section-sub">Runs silently in the background — you only notice when you check the stats.</p>
+  </div>
+  <div class="steps-grid">
+    <div class="step">
+      <div class="step-num">01</div>
+      <h3>Poll every 10 seconds</h3>
+      <p>Records which app is in the foreground using macOS's <code>NSWorkspace</code> API. No Accessibility permissions required. Pure passive observation.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <h3>Check every 60 seconds</h3>
+      <p>Scans all running apps. Any app idle past your threshold gets flagged. Apple Intelligence (via <code>apfel</code>) makes the final YES/NO call — or skip it and use pure timer logic.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <h3>Close + clean</h3>
+      <p>Sends a graceful terminate signal. Force-kills if the app ignores it. Wipes the cache directory. Logs the freed bytes to <code>history.json</code>. Done.</p>
+    </div>
+  </div>
+</section>
 
-  <div class="steps">
-    <div class="step">
-      <div class="step-num">1</div>
-      <div class="step-body">
-        <h3>Poll (every 10 s)</h3>
-        <p>Records which app is in the foreground and timestamps it. Uses macOS's <code style="color:var(--green)">NSWorkspace</code> API — no Accessibility permissions required.</p>
+<!-- ── INSTALL ──────────────────────────────────────────── -->
+<section class="section install-section" id="install">
+  <div class="section-header">
+    <div class="section-tag">Install</div>
+    <h2 class="section-title">Running in under 60 seconds.</h2>
+  </div>
+  <div class="install-grid">
+    <div class="install-box">
+      <div class="install-box-header">
+        <span>~/terminal</span>
+        <span class="lang-badge">bash</span>
       </div>
+      <pre><span class="c"># Clone</span>
+<span class="g">git clone</span> <span class="w">https://github.com/TomGranot/app-guardian</span>
+<span class="g">cd</span> app-guardian
+
+<span class="c"># Install Apple Intelligence backend (optional)</span>
+<span class="g">brew tap</span> Arthur-Ficial/tap
+<span class="g">brew install</span> apfel
+<span class="g">apfel --serve</span>
+
+<span class="c"># Install deps + launch</span>
+<span class="g">./setup.sh</span>
+<span class="g">./run.sh</span>
+
+<span class="c"># Auto-start on login</span>
+<span class="g">./install-agent.sh</span>
+
+<span class="c"># Or via Homebrew tap</span>
+<span class="g">brew tap</span> TomGranot/tap
+<span class="g">brew install</span> app-guardian</pre>
     </div>
-    <div class="step">
-      <div class="step-num">2</div>
-      <div class="step-body">
-        <h3>Check (every 60 s)</h3>
-        <p>Scans all running apps. Any app idle past your threshold gets flagged. Apple Intelligence (via apfel) makes the final YES/NO call — or you can skip it and use pure timer logic.</p>
+    <div class="install-right">
+      <div class="install-note yellow">
+        <h4>Requirements</h4>
+        <p>macOS 26 (Tahoe) + Apple Silicon for Apple Intelligence. Python 3.11+ for the app itself. The AI features are optional — disable them in the menu and it works on any Mac.</p>
       </div>
-    </div>
-    <div class="step">
-      <div class="step-num">3</div>
-      <div class="step-body">
-        <h3>Close + clean</h3>
-        <p>Sends a terminate signal and waits. Force-kills if needed. Then wipes the app's cache directory and logs the freed space to history.</p>
+      <div class="install-note">
+        <h4>Auto-start on login</h4>
+        <p>Run <code style="font-family:monospace;font-size:0.85em;background:#f0f0e8;padding:1px 5px">./install-agent.sh</code> to register a LaunchAgent. App Guardian will start automatically on login and restart itself if it ever crashes.</p>
+      </div>
+      <div class="install-note green">
+        <h4>No apfel? No problem.</h4>
+        <p>Toggle off "Use Apple Intelligence" in the menu bar. App Guardian will close all idle non-excluded apps based on the timer alone — fast and reliable.</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Install -->
-<section class="section" id="install" style="padding-top:0">
-  <div class="section-label">Installation</div>
-  <h2 class="section-title">Up and running in 60 seconds</h2>
-
-  <div class="code-block">
-    <pre><span class="comment"># Clone the repo</span>
-<span class="cmd">git clone</span> https://github.com/TomGranot/app-guardian.git
-<span class="cmd">cd</span> app-guardian
-
-<span class="comment"># (Optional) Install Apple Intelligence backend</span>
-<span class="cmd">brew tap</span> Arthur-Ficial/tap <span class="cmd">&amp;&amp; brew install</span> apfel
-<span class="cmd">apfel --serve</span>   <span class="comment"># keep running in a Terminal tab</span>
-
-<span class="comment"># Install Python deps and launch</span>
-<span class="cmd">./setup.sh</span>
-<span class="cmd">./run.sh</span>
-
-<span class="comment"># Auto-start on login (optional)</span>
-<span class="cmd">./install-agent.sh</span></pre>
-  </div>
-</section>
-
-<!-- CTA -->
+<!-- ── CTA ──────────────────────────────────────────────── -->
 <section class="cta-section">
-  <h2>Give your Mac a break</h2>
-  <p>Free, open source, and runs entirely on your machine. No account needed.</p>
-  <div class="hero-buttons">
-    <a href="https://github.com/TomGranot/app-guardian" class="btn btn-primary">View on GitHub →</a>
+  <div class="cta-left">
+    <h2>Give your Mac<br><span>a memory.</span></h2>
+  </div>
+  <div class="cta-right">
+    <a href="https://github.com/TomGranot/app-guardian" class="btn btn-dark">★ &nbsp;Star on GitHub</a>
+    <a href="https://github.com/TomGranot/app-guardian/releases" class="btn btn-primary">↓ &nbsp;Download v1.0.0</a>
+    <a href="https://github.com/TomGranot/app-guardian/issues" class="btn btn-secondary">🐛 &nbsp;Report an issue</a>
   </div>
 </section>
 
-<!-- Footer -->
+<!-- ── FOOTER ───────────────────────────────────────────── -->
 <footer>
-  <span>👻 App Guardian — MIT License</span>
+  <div class="footer-logo">
+    <span class="dot"></span>
+    APP GUARDIAN
+  </div>
   <div class="footer-links">
     <a href="https://github.com/TomGranot/app-guardian">GitHub</a>
-    <a href="https://github.com/TomGranot/app-guardian/issues">Issues</a>
     <a href="https://github.com/TomGranot/app-guardian/releases">Releases</a>
+    <a href="https://github.com/TomGranot/app-guardian/issues">Issues</a>
+    <a href="https://github.com/Arthur-Ficial/apfel">apfel</a>
   </div>
+  <div class="footer-right">MIT License · Built for macOS</div>
 </footer>
 
 </body>

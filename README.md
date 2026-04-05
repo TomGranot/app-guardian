@@ -46,6 +46,16 @@ Your Mac accumulates open apps you forgot about. App Guardian silently watches w
 
 ## Installation
 
+### Homebrew (easiest)
+
+```bash
+brew tap TomGranot/tap
+brew install app-guardian
+brew services start app-guardian
+```
+
+### From source
+
 ```bash
 # 1. Clone
 git clone https://github.com/TomGranot/app-guardian.git
