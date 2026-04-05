@@ -705,25 +705,24 @@
         <span>~/terminal</span>
         <span class="lang-badge">bash</span>
       </div>
-      <pre><span class="c"># Clone</span>
+      <pre><span class="c"># ── Recommended: Homebrew ───────────────────</span>
+<span class="g">brew tap</span> TomGranot/tap
+<span class="g">brew install</span> app-guardian
+<span class="g">brew services start</span> app-guardian
+
+<span class="c"># ── Or from source ───────────────────────────</span>
 <span class="g">git clone</span> <span class="w">https://github.com/TomGranot/app-guardian</span>
 <span class="g">cd</span> app-guardian
-
-<span class="c"># Install Apple Intelligence backend (optional)</span>
-<span class="g">brew tap</span> Arthur-Ficial/tap
-<span class="g">brew install</span> apfel
-<span class="g">apfel --serve</span>
-
-<span class="c"># Install deps + launch</span>
 <span class="g">./setup.sh</span>
 <span class="g">./run.sh</span>
 
-<span class="c"># Auto-start on login</span>
+<span class="c"># Auto-start on login (source install only)</span>
 <span class="g">./install-agent.sh</span>
 
-<span class="c"># Or via Homebrew tap</span>
-<span class="g">brew tap</span> TomGranot/tap
-<span class="g">brew install</span> app-guardian</pre>
+<span class="c"># ── Apple Intelligence backend (optional) ───</span>
+<span class="g">brew tap</span> Arthur-Ficial/tap
+<span class="g">brew install</span> apfel
+<span class="g">apfel --serve</span></pre>
     </div>
     <div class="install-right">
       <div class="install-note yellow">
